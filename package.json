@@ -8,14 +8,17 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "tsc && node ./build/app.js",
-    "dev": "nodemon --watch ./src/** -e ts  --exec \"npm run compile\""
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
   },
   "dependencies": {
+    "@types/node-schedule": "^2.1.8",
+    "@types/nodemailer": "^7.0.4",
     "axios": "^1.13.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "node-schedule": "^2.1.1",
+    "nodemailer": "^7.0.10",
     "tsc-watch": "^7.2.0"
   },
   "devDependencies": {
@@ -24,6 +27,8 @@
     "@types/node": "^24.10.1",
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.11",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }
 }
