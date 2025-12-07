@@ -68,7 +68,7 @@ const cronSpecObj = {
 };
 
 // 스케쥴러
-const job = nodeSchedule.scheduleJob(cronSpecObj.dev, () => {
+const job = nodeSchedule.scheduleJob(cronSpecObj.weekday, () => {
   getBusApi();
 });
 
