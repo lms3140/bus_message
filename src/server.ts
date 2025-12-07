@@ -1,7 +1,7 @@
 import axios = require("axios");
 import type Request = require("express");
 import type e = require("express");
-import type { BusArrivalResponse } from "./types/busApiType.js";
+import type { BusArrivalResponse, BusArrivalItem } from "./types/busApiType.js";
 import nodeSchedule = require("node-schedule");
 import nodemailer = require("nodemailer");
 
@@ -10,9 +10,39 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const port = 3000;
+const busArrivalItemToMailHtml = (item: BusArrivalItem): string =>
+  `
+<h3>${item.routeName ?? ""} 버스 도착 정보</h3>
+
+<p>
+  방향: ${item.routeDestName ?? ""}<br/>
+  정류소: ${item.stationId ?? ""}
+</p>
+
+<hr/>
+
+<strong>첫 번째 차량</strong><br/>
+차량번호: ${item.plateNo1 ?? ""}<br/>
+도착예정: ${item.predictTime1 ?? ""}분 ${
+    item.predictTimeSec1 ? `(${item.predictTimeSec1}초)` : ""
+  }<br/>
+현재위치: ${item.stationNm1 ?? ""}<br/>
+혼잡도: ${item.crowded1 ?? ""}<br/>
+빈좌석: ${item.remainSeatCnt1 ?? ""}
+<br/><br/>
+
+<strong>두 번째 차량</strong><br/>
+차량번호: ${item.plateNo2 ?? ""}<br/>
+도착예정: ${item.predictTime2 ?? ""}분 ${
+    item.predictTimeSec2 ? `(${item.predictTimeSec2}초)` : ""
+  }<br/>
+현재위치: ${item.stationNm2 ?? ""}<br/>
+혼잡도: ${item.crowded2 ?? ""}<br/>
+빈좌석: ${item.remainSeatCnt2 ?? ""}
+`.trim();
 
 // 메일 보내기.
-const sendMail = async () => {
+const sendMail = async (busData: BusArrivalItem) => {
   const transporter = nodemailer.createTransport({
     service: "naver",
     host: "smtp.naver.com",
@@ -27,24 +57,19 @@ const sendMail = async () => {
     from: process.env.NAVER_ID,
     to: process.env.GOOGLE_ID,
     text: "테스트 함해보이소",
+    html: busArrivalItemToMailHtml(busData),
   });
   console.log("msg send:", info.messageId);
 };
 
-// 일단 테스트! 서버 켜자마자 실행시키기 싫어서 일단 home 이벤트로 둠
-app.get("/", async (req: Request, res: e.Response) => {
-  const bus = await getBusApi();
-  try {
-    await sendMail();
-  } catch (e) {
-    console.log(e);
-  }
-  res.send("굿?");
-});
+const cronSpecObj = {
+  weekday: "0 */5 7-8 * * 1-5", // 평일 7~8시 사이 5분마다
+  dev: "0 * * * * *", // 매 1분
+};
 
 // 스케쥴러
-const job = nodeSchedule.scheduleJob("0 */5 7-8 * * 1-5", () => {
-  console.log("i'm called");
+const job = nodeSchedule.scheduleJob(cronSpecObj.dev, () => {
+  getBusApi();
 });
 
 async function getBusApi() {
@@ -56,8 +81,10 @@ async function getBusApi() {
     const resp = await axios<BusArrivalResponse>(`${BASE_URL}?${params}`);
     const busList = resp.data.response.msgBody.busArrivalList;
     const routeName = 3301;
-
     const targetBus = busList.find((v) => v.routeName === routeName);
+    if (targetBus) {
+      await sendMail(targetBus);
+    }
 
     return targetBus;
   } catch (e) {

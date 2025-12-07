@@ -12,7 +12,7 @@ export interface BusArrivalResponse {
   };
 }
 
-export interface BusArrivalItem {
+export type BusArrivalItem = {
   // 차량 차내 혼잡도
   crowded1: number | "" | null;
   crowded2: number | "" | null;
@@ -92,4 +92,4 @@ export interface BusArrivalItem {
   // 차량 상태코드 (0:교차로통과, 1:정류소 도착, 2:정류소 출발)
   stateCd1?: number | "" | null;
   stateCd2?: number | "" | null;
-}
+};
